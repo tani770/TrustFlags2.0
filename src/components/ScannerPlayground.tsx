@@ -28,7 +28,7 @@ export const ScannerPlayground: React.FC<ScannerPlaygroundProps> = ({ onSimulate
   const [filename, setFilename] = useState<string>('auth_service.py');
   const [code, setCode] = useState<string>(CODE_PRESETS[0].code);
   const [committer, setCommitter] = useState<string>('alex-dev');
-  const [activeCategoryFilter, setActiveCategoryFilter] = useState<'all' | 'security' | 'syntax' | 'lint'>('all');
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState<'all' | 'security' | 'syntax' | 'lint' | 'test'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Run analysis
@@ -288,6 +288,12 @@ export const ScannerPlayground: React.FC<ScannerPlaygroundProps> = ({ onSimulate
               </div>
               <div className="space-y-1 text-[11px]">
                 <div className="flex justify-between">
+                  <span className="text-slate-400">🧪 Tests (Unittest/pytest):</span>
+                  <span className={`font-mono font-semibold ${report.testFailures > 0 ? 'text-rose-400' : 'text-slate-400'}`}>
+                    {report.testFailures}
+                  </span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-slate-400">🛡️ Security (Bandit):</span>
                   <span className={`font-mono font-semibold ${report.securityIssues > 0 ? 'text-rose-400' : 'text-slate-400'}`}>
                     {report.securityIssues}
@@ -350,6 +356,16 @@ export const ScannerPlayground: React.FC<ScannerPlaygroundProps> = ({ onSimulate
                 All ({report.issues.length})
               </button>
               <button
+                onClick={() => setActiveCategoryFilter('test')}
+                className={`px-2.5 py-1 rounded-md transition-colors ${
+                  activeCategoryFilter === 'test'
+                    ? 'bg-purple-500/20 text-purple-300 font-semibold'
+                    : 'text-slate-400 hover:text-slate-300'
+                }`}
+              >
+                Tests ({report.testFailures})
+              </button>
+              <button
                 onClick={() => setActiveCategoryFilter('security')}
                 className={`px-2.5 py-1 rounded-md transition-colors ${
                   activeCategoryFilter === 'security'
@@ -408,12 +424,15 @@ export const ScannerPlayground: React.FC<ScannerPlaygroundProps> = ({ onSimulate
                     </td>
                     <td className="py-3 px-3 whitespace-nowrap">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium ${
-                        issue.category === 'security'
+                        issue.category === 'test'
+                          ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                          : issue.category === 'security'
                           ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
                           : issue.category === 'syntax'
                           ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
                           : 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
                       }`}>
+                        {issue.category === 'test' && '🧪 Test Fail'}
                         {issue.category === 'security' && '🛡️ Security'}
                         {issue.category === 'syntax' && '💥 Syntax'}
                         {issue.category === 'lint' && '🧹 Lint'}

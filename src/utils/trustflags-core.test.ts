@@ -67,3 +67,21 @@ def multiply(x: int, y: int) -> int:
   assert.equal(report.accuracyScore, 100.0);
   assert.equal(report.totalErrors, 0);
 });
+
+test('Analyzer detects failing unit test assertions and awards Red badge', () => {
+  const brokenMath = `import unittest
+
+def add_numbers(a, b):
+    return a * b
+
+class TestAddNumbers(unittest.TestCase):
+    def test_add_positive_numbers(self):
+        self.assertEqual(add_numbers(3, 5), 8)
+`;
+  const report = analyzePythonCode('test_calc.py', brokenMath, 'developer');
+  assert.equal(report.passed, false);
+  assert.equal(report.badgeStatus, 'FLAGGED');
+  assert.equal(report.testFailures, 1);
+  assert.equal(report.issues[0].ruleId, 'TEST_FAIL');
+  assert.equal(report.issues[0].category, 'test');
+});

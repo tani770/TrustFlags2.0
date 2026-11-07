@@ -106,6 +106,7 @@ class ReportGenerator:
             f"| **Syntax Errors (AST)** | `{report.syntax_errors}` | 0 allowed |",
             f"| **Lint Issues (Ruff / Flake8)** | `{report.lint_errors}` | 0 allowed |",
             f"| **Security Issues (Bandit)** | `{report.security_issues}` | 0 allowed |",
+            f"| **Unit Test Failures** | `{report.test_failures}` | 0 allowed |",
             f"| **Total Errors** | **`{report.total_errors}`** | **0 required for Green Badge** |",
             f"| **Merge Gate Verdict** | {gate_verdict} | Enforced by Branch Protection |",
             f"",
@@ -124,6 +125,7 @@ class ReportGenerator:
                     IssueCategory.SECURITY: "🛡️ Security",
                     IssueCategory.SYNTAX: "💥 Syntax",
                     IssueCategory.LINT: "🧹 Lint",
+                    IssueCategory.TEST: "🧪 Test Failure",
                 }.get(issue.category, str(issue.category))
                 sev_icon = "🔴" if issue.severity.value in ["critical", "high"] else "🟡"
                 snippet_text = f"<br>`{issue.code_snippet}`" if issue.code_snippet else ""

@@ -87,6 +87,23 @@ def third():
         self.assertEqual(loc.total_loc, 11)
         self.assertTrue(len(issues) >= 1)
 
+    def test_failing_unit_test_triggers_red_badge(self):
+        broken_code = '''import unittest
+
+def add_numbers(a, b):
+    return a * b
+
+class TestAddNumbers(unittest.TestCase):
+    def test_add_positive_numbers(self):
+        self.assertEqual(add_numbers(3, 5), 8)
+'''
+        issues, loc = self.analyzer.analyze_source("test_broken.py", broken_code)
+        test_issues = [i for i in issues if i.category == IssueCategory.TEST]
+        self.assertTrue(len(test_issues) >= 1)
+        self.assertEqual(test_issues[0].rule_id, "TEST_FAIL")
+        self.assertIn("15 != 8", test_issues[0].message)
+
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -370,7 +370,78 @@ class CodeAnalyzer:
                     )
                 )
 
+        # Step 5: Dynamic Test Suite Execution (unittest / test discovery)
+        test_issues = self.run_unit_tests_on_content(file_path, content)
+        issues.extend(test_issues)
+
         return issues, loc
+
+    def run_unit_tests_on_content(self, file_path: str, content: str) -> List[CodeIssue]:
+        """Safely execute unittest suite if present in source to verify logical correctness."""
+        if "unittest.TestCase" not in content and "def test_" not in content:
+            return []
+
+        import io
+        import types
+        import unittest
+
+        test_issues: List[CodeIssue] = []
+        lines = content.splitlines()
+
+        try:
+            # Create an isolated module namespace
+            module = types.ModuleType("trustflags_test_sandbox")
+            exec(content, module.__dict__)
+
+            loader = unittest.TestLoader()
+            suite = unittest.TestSuite()
+            for attr_name in dir(module):
+                attr = getattr(module, attr_name)
+                if isinstance(attr, type) and issubclass(attr, unittest.TestCase):
+                    suite.addTests(loader.loadTestsFromTestCase(attr))
+
+            if suite.countTestCases() > 0:
+                stream = io.StringIO()
+                runner = unittest.TextTestRunner(stream=stream, verbosity=2)
+                result = runner.run(suite)
+
+                for test_case, err_trace in (result.failures + result.errors):
+                    test_method_name = test_case.id().split(".")[-1]
+                    line_num = 1
+                    for idx, l in enumerate(lines, 1):
+                        if f"def {test_method_name}" in l:
+                            line_num = idx
+                            break
+
+                    err_lines = [el.strip() for el in err_trace.strip().splitlines() if el.strip()]
+                    last_line = err_lines[-1] if err_lines else "Assertion failed"
+
+                    test_issues.append(
+                        CodeIssue(
+                            file_path=file_path,
+                            line_number=line_num,
+                            column=1,
+                            rule_id="TEST_FAIL",
+                            message=f"Unit Test Failed: {test_method_name}() -> {last_line}",
+                            category=IssueCategory.TEST,
+                            severity=IssueSeverity.CRITICAL,
+                            code_snippet=lines[line_num - 1].strip() if line_num <= len(lines) else None,
+                        )
+                    )
+        except Exception as e:
+            test_issues.append(
+                CodeIssue(
+                    file_path=file_path,
+                    line_number=1,
+                    column=1,
+                    rule_id="TEST_ERR",
+                    message=f"Test Suite Execution Error: {str(e)}",
+                    category=IssueCategory.TEST,
+                    severity=IssueSeverity.CRITICAL,
+                )
+            )
+
+        return test_issues
 
     def analyze_file(self, file_path: str) -> Tuple[List[CodeIssue], LocMetrics]:
         """Read and analyze a file from disk."""
@@ -431,7 +502,8 @@ class CodeAnalyzer:
         syntax_count = sum(1 for i in all_issues if i.category == IssueCategory.SYNTAX)
         lint_count = sum(1 for i in all_issues if i.category == IssueCategory.LINT)
         security_count = sum(1 for i in all_issues if i.category == IssueCategory.SECURITY)
-        total_errors = syntax_count + lint_count + security_count
+        test_count = sum(1 for i in all_issues if i.category == IssueCategory.TEST)
+        total_errors = syntax_count + lint_count + security_count + test_count
 
         # Accuracy Score formula: ((total_loc - error_lines) / total_loc) * 100
         error_lines_count = len(error_lines_set)
@@ -454,6 +526,7 @@ class CodeAnalyzer:
             syntax_errors=syntax_count,
             lint_errors=lint_count,
             security_issues=security_count,
+            test_failures=test_count,
             total_errors=total_errors,
             accuracy_score=accuracy,
             badge_status=badge_status,

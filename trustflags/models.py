@@ -36,6 +36,7 @@ class IssueCategory(str, Enum):
     SYNTAX = "syntax"
     LINT = "lint"
     SECURITY = "security"
+    TEST = "test"
 
 
 class CodeIssue(BaseModel):
@@ -84,6 +85,7 @@ class TrustFlagsReport(BaseModel):
     syntax_errors: int = 0
     lint_errors: int = 0
     security_issues: int = 0
+    test_failures: int = 0
     total_errors: int = 0
     accuracy_score: float = 100.0
     
