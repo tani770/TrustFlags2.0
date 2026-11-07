@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trustflags"
+version = "1.0.0"
+description = "Automated code quality and security verification tool with 100% accuracy enforcement and dynamic badges for GitHub."
+readme = "README.md"
+authors = [{ name = "TrustFlags Team", email = "devsecops@trustflags.org" }]
+license = { text = "Apache-2.0" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Security",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+keywords = ["code-quality", "security", "bandit", "ast", "radon", "github-actions", "devsecops", "badge"]
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.0.0",
+    "PyGithub>=2.1.1",
+    "rich>=13.0.0",
+    "bandit>=1.7.5",
+    "radon>=6.0.1",
+    "ruff>=0.1.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "httpx>=0.24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "flake8>=6.0.0",
+]
+
+[project.scripts]
+trustflags = "trustflags.main:cli"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["trustflags*"]

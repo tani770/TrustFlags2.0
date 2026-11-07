@@ -1,0 +1,74 @@
+name: 'TrustFlags - Automated Code Quality & Security Verification'
+description: 'Enforces 100% accuracy, AST syntax checks, Bandit security scans, Radon LOC metrics, dynamic Green/Red badges, and PR status checks.'
+author: 'TrustFlags Team'
+branding:
+  icon: 'shield'
+  color: 'green'
+
+inputs:
+  github_token:
+    description: 'GitHub Secret Token used for posting PR comments and updating commit statuses.'
+    required: false
+    default: '${{ github.token }}'
+  paths:
+    description: 'Paths or directories containing Python files to scan.'
+    required: false
+    default: '.'
+  fail_on_errors:
+    description: 'Whether to fail the CI step if code quality or security errors are detected (Red Badge).'
+    required: false
+    default: 'true'
+  post_pr_comment:
+    description: 'Whether to post an automated Markdown summary comment on the Pull Request.'
+    required: false
+    default: 'true'
+  set_commit_status:
+    description: 'Whether to set the GitHub Commit Status (success for Green Badge, failure for Red Badge).'
+    required: false
+    default: 'true'
+
+outputs:
+  passed:
+    description: 'True if 100% accuracy achieved with zero errors, else False.'
+  accuracy_score:
+    description: 'Calculated accuracy percentage (0.0 to 100.0).'
+  total_errors:
+    description: 'Total count of syntax errors, lint issues, and security vulnerabilities.'
+  badge_url:
+    description: 'Dynamic Shields.io badge URL representing the verification result.'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install TrustFlags & Scanning Tools
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install . bandit ruff radon PyGithub rich
+
+    - name: Run TrustFlags Verification
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
+        GITHUB_ACTOR: ${{ github.actor }}
+      run: |
+        if [ "${{ github.event_name }}" = "pull_request" ] && [ -n "${{ github.event.pull_request.number }}" ]; then
+          echo "Running in Pull Request mode for PR #${{ github.event.pull_request.number }}..."
+          trustflags pr \
+            --repo "${{ github.repository }}" \
+            --pr "${{ github.event.pull_request.number }}" \
+            --token "${{ inputs.github_token }}" \
+            ${{ inputs.fail_on_errors == 'true' && '--fail-on-errors' || '' }}
+        else
+          echo "Running in Repository Path scan mode..."
+          trustflags scan ${{ inputs.paths }} \
+            --committer "${{ github.actor }}" \
+            ${{ inputs.fail_on_errors == 'true' && '--fail-on-errors' || '' }}
+        fi

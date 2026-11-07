@@ -1,0 +1,6 @@
+{
+  "name": "TrustFlags - DevSecOps Code Quality & Security Verification",
+  "description": "Automated code quality and security verification tool with AST syntax checks, Bandit security scans, Radon LOC metrics, dynamic Green/Red badges, and GitHub PR commit status enforcement.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
